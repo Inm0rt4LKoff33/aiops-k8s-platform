@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+node_modules/
+dist/
+build/
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.pem
+*.key
+kubeconfig*
