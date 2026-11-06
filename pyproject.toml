@@ -1,0 +1,15 @@
+[project]
+name = "aiops-k8s-platform"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "Inm0rt4LKoff33", email = "fabimv23@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "kubernetes>=37.0.2",
+    "neo4j>=6.4.1",
+]
+
+[tool.uv]
+package = false

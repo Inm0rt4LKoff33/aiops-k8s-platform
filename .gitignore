@@ -13,3 +13,5 @@ build/
 *.pem
 *.key
 kubeconfig*
+.venv/
+__pycache__/
