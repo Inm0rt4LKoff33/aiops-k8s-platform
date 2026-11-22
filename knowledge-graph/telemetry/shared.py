@@ -65,3 +65,31 @@ def event_watcher(api_list=None, namespace=None, resource_version=None, structur
 
         finally:
             w.stop()
+
+def is_subset(subset_dict, superset_dict):
+    """Devuelve True si subset_dict es un subconjunto de superset_dict."""
+    return all(superset_dict.get(k) == v for k, v in subset_dict.items())
+
+def get_candidates(session, namespace, label_node, flag : str):
+    candidates = session.run(f"""
+        MATCH (n:{label_node} {{namespace: $namespace}})
+        WHERE n.eliminado_en IS NULL 
+        AND n.{flag} IS NOT NULL
+        RETURN n.uid AS uid, n.{flag} AS labels
+    """, namespace=namespace)
+    return list(candidates)
+
+def get_matches(list_candidates, objective_label, first_match : bool, candidate_is_subset : bool):
+    matches = []
+    for candidate in list_candidates:
+        candidate_labels = json.loads(candidate["labels"])
+
+        candidate_matches = (is_subset(candidate_labels, objective_label) if candidate_is_subset 
+                             else is_subset(objective_label, candidate_labels))
+        if candidate_matches:
+            if first_match:
+                return candidate["uid"]
+            else:    
+                matches.append(candidate["uid"])
+    return matches if matches else None
+    
