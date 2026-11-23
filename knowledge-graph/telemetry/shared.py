@@ -19,6 +19,7 @@ logging.basicConfig(level=logging.INFO)
 config.load_kube_config()
 apps_v1 = client.AppsV1Api()
 core_v1 = client.CoreV1Api()
+networking_v1 = client.NetworkingV1Api()
 
 NEO4J_URI = "bolt://localhost:7687"
 NEO4J_AUTH = ("neo4j", "aiops-tfm-2026")
