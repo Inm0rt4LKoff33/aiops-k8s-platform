@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from shared import ENTORNO_BY_NAMESPACE,core_v1,logging, json, event_watcher
+from shared import core_v1, get_candidates, get_matches, logging, json, event_watcher
 
 logger = logging.getLogger(__name__)
 
@@ -29,33 +29,29 @@ def insert_pod(driver, params):
             SET p.namespace = $namespace
             SET p.creado_en = $creado_en
             SET p.eliminado_en = $eliminado_en
+            SET p.labels = $labels
         """, **params)
 
-        get_deployment_results = session.run("""
-            MATCH (d:Deployment {namespace: $namespace})
-            WHERE d.eliminado_en IS NULL AND d.selector IS NOT NULL
-            RETURN d.uid AS uid, d.selector AS selector
-        """, namespace=params["namespace"])
+        get_deployment_candidates = get_candidates(session, params["namespace"], "Deployment", "selector")
 
-        matches = list(get_deployment_results)
         pod_labels = json.loads(params["labels"])
-        if deployment_uid := compare_labels(matches, pod_labels):
+        if deployment_uid := get_matches(list(get_deployment_candidates), pod_labels, first_match=True, candidate_is_subset=True):
             insert_relation_pod_deployment(session, {
                 "uid": params["uid"],
                 "namespace": params["namespace"],
                 "deployment_uid": deployment_uid
             })
 
-def compare_labels(matches, pod_labels):
-    """Devuelve el uid del Deployment 
-        cuyo selector es subconjunto de pod_labels, 
-        o None si ninguno matchea."""
-    
-    for match in matches:
-        selector_labels = json.loads(match["selector"])
-        if all(pod_labels.get(k) == v for k, v in selector_labels.items()):
-            return match["uid"]
-    return None
+        get_service_candidates = get_candidates(session, params["namespace"], "Service", "selector")
+        if service_uid_list := get_matches(list(get_service_candidates), pod_labels, first_match=False, candidate_is_subset=True):
+            for service_uid in service_uid_list:
+                insert_relation_pod_service(session, {
+                    "uid": service_uid,
+                    "namespace": params["namespace"],
+                    "pod_uid": params["uid"]
+                })
+
+
 
 def insert_relation_pod_deployment(session, params):
     """Inserta la relación entre un Pod y un Deployment en Neo4j."""
@@ -67,6 +63,17 @@ def insert_relation_pod_deployment(session, params):
         AND d.selector IS NOT NULL
         AND d.namespace = $namespace
         MERGE (d)-[:GESTIONA]->(p)
+    """, **params)
+
+def insert_relation_pod_service(session, params):
+    """Inserta la relación entre un Service y un Pod en Neo4j."""
+    
+    session.run("""
+        MATCH (s:Service {uid: $uid})
+        MATCH (p:Pod {uid: $pod_uid})
+        WHERE p.eliminado_en IS NULL 
+        AND s.namespace = $namespace
+        MERGE (s)-[:SELECCIONA]->(p)
     """, **params)
 
 event_watcher(api_list=core_v1.list_namespaced_pod, 
