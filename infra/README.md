@@ -13,8 +13,10 @@ TFM, documentado aquí por trazabilidad.
 - `kube-prometheus-stack` (Prometheus + Grafana + Alertmanager + node-exporter + kube-state-metrics)
 - `loki-stack` (Loki + Promtail) para logs
 
-## Pendiente
-- Chaos Mesh para inyección de fallos
+## Inyección de fallos (namespace `chaos-mesh`)
+- Chaos Mesh 2.7.2, vía Helm chart oficial (`chaos-mesh/chaos-mesh`)
+- `chaosDaemon.runtime=containerd` y `chaosDaemon.socketPath=/run/containerd/containerd.sock`, acorde al runtime del clúster `kind`
+- Los experimentos corren directamente sobre `online-boutique` (no sobre un namespace `chaos-test` separado): se reutiliza el `adservice` real, ya con tráfico del `loadgenerator` propio de Online Boutique
 
 ## Grafo de conocimiento (namespace `knowledge-graph`)
 - Neo4j 2026.10.1 Community Edition, vía Helm chart oficial (`neo4j/neo4j`)
