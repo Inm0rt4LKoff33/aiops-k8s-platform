@@ -48,8 +48,8 @@ def insert_experiment(driver, params):
         SET ex.valor_modo = $valor_modo
         SET ex.parametros = $parametros
         SET ex.duracion_seg = $duracion_seg
-        SET ex.iniciado_en = $iniciado_en
-        SET ex.finalizado_en = $iniciado_en
+        SET ex.iniciado_en = datetime($iniciado_en)
+        SET ex.finalizado_en = datetime($iniciado_en)
         SET ex.alerta_esperada = $alerta_esperada
         SET ex.deteccion_max_seg = $deteccion_max_seg
     """, **params)
