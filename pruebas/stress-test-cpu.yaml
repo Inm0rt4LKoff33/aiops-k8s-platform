@@ -1,0 +1,19 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: stress-test-cpu
+  namespace: online-boutique
+  annotations:
+    pruebas/alerta-esperada: "CPUSaturada"
+    pruebas/deteccion-max-seg: "150"
+spec:
+  mode: one
+  selector:
+    namespaces: [online-boutique]
+    labelSelectors:
+      app: adservice
+  stressors:
+    cpu:
+      workers: 2
+      load: 90
+  duration: "60s"

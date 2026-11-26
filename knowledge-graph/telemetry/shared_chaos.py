@@ -37,7 +37,7 @@ def crd_watcher(group=None, version=None, plural=None,
           time.sleep(5)
     except Exception as e:
           # ProtocolError, ConnectionError, etc.
-          logger.warning("Connection error (%s), reconnecting in 5s", e)
+          logger.exception("Exception error : ", e)
           time.sleep(5)
     finally:
       crd_w.stop()

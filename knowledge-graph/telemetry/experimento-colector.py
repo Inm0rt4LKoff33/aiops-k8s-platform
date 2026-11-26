@@ -1,10 +1,15 @@
 from shared_chaos import crd_watcher
-
+from sys import argv
 
 def structure_experiment(tipo, obj):
-  spec_delay = obj["spec"].get("delay")
-  spec_stressors = obj["spec"].get("stressors")
+  delay = obj["spec"].get("delay")
   containers = obj.get("status", {}).get("experiment", {}).get("containerRecords", [])
+  accion = obj["spec"].get("action")
+  stressors = obj["spec"].get("stressors")
+
+  if accion is None and stressors:
+      accion = next(iter(stressors))   # "cpu" o "memory"
+
 
   pods_inyectados = []
 
@@ -17,15 +22,17 @@ def structure_experiment(tipo, obj):
       "container" : splitted[2] if len(splitted) > 2 else ""
     })
 
+  dict_params = define_params(accion, stressors)
+
   return {
     "uid" : obj["metadata"]["uid"],
     "nombre" : obj["metadata"]["name"],
     "namespace" : obj["metadata"]["namespace"],
     "kind" : obj["kind"],
-    "accion" : obj["spec"]["action"],
+    "accion" : accion,
     "modo" : obj["spec"].get("mode"),
     "valor_modo" : obj["spec"].get("value"),
-    "parametros" : [params for params in ([spec_delay, spec_stressors]) if params is not None],
+    "parametros" : [f"{key}={value}" for key, value in dict_params.items()],
     "duracion_seg" : obj["spec"]["duration"],
     "iniciado_en" : obj["metadata"]["creationTimestamp"],
     "finalizado_en" : None,
@@ -34,6 +41,12 @@ def structure_experiment(tipo, obj):
     "containers" : containers,
     "pods_inyectados" : pods_inyectados
   }
+
+def define_params(accion, stressors):
+  if stressors is None :
+    return {}
+
+  return stressors.get(accion, {})
 
 def insert_experiment(driver, params):
   with driver.session() as session:
@@ -70,5 +83,5 @@ def insert_relation_experiment_pod(session, params):
       """, **params)
 
 crd_watcher(group="chaos-mesh.org", version="v1alpha1", 
-            plural="podchaos", namespace="online-boutique",
+            plural=argv[1], namespace="online-boutique",
             insert_event=insert_experiment, structure_event=structure_experiment)
